@@ -53,7 +53,7 @@ rag_pipeline: Optional[RAGPipeline] = None
 def startup_event():
     global rag_pipeline
     init_db()
-    print("[INFO] SQLite database initialized.")
+    print("[INFO] SQLite application database initialized.")
     try:
         rag_pipeline = RAGPipeline()
     except Exception as e:
@@ -133,7 +133,7 @@ def process_chat(request: ChatRequest):
     # Extract source filenames for database logging
     doc_names = [s["document"] for s in result.get("sources", [])]
     
-    # Log query into SQLite database
+    # Save query, answer, timestamp, and sources into SQLite application database
     try:
         log_query(
             query=request.query,
@@ -141,7 +141,7 @@ def process_chat(request: ChatRequest):
             sources=doc_names
         )
     except Exception as err:
-        print(f"[WARNING] Logging query to DB: {err}")
+        print(f"[WARNING] Logging query to SQLite DB: {err}")
     
     return ChatResponse(
         answer=result["answer"],
@@ -166,7 +166,8 @@ def trigger_ingestion():
         )
 
 
-@app.get("/history", summary="Get Recent Emergency Logs")
-def get_history(limit: int = 10):
+@app.get("/logs", summary="Get Recent Emergency Logs")
+@app.get("/history", summary="Get Recent Emergency Logs (Alias)")
+def get_logs(limit: int = 10):
     logs = get_recent_logs(limit=limit)
     return {"logs": logs}

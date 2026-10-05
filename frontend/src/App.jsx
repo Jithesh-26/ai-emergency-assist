@@ -51,13 +51,13 @@ export default function App() {
 
   const fetchHistory = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/history?limit=5`);
+      const res = await fetch(`${API_BASE_URL}/logs?limit=10`);
       if (res.ok) {
         const data = await res.json();
         setHistory(data.logs || []);
       }
     } catch (err) {
-      console.warn("Could not fetch history:", err);
+      console.warn("Could not fetch emergency logs:", err);
     }
   };
 
@@ -192,7 +192,7 @@ export default function App() {
               </a>
             </div>
 
-            {/* Quick Contacts Grid: 100, 101, 102, 1930, 1098, 181 (Responsive wrapping, no text truncation) */}
+            {/* Quick Contacts Grid: 100, 101, 102, 1930, 1098, 181 */}
             <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
               {EMERGENCY_CONTACTS.map((contact) => (
                 <a
@@ -366,7 +366,7 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Formatted Clean Markdown Output (No visual boxes around bold text) */}
+                  {/* Formatted Clean Markdown Output */}
                   <div className="text-sm text-slate-100 font-sans bg-slate-950/80 p-5 rounded-xl border border-slate-800/80 leading-relaxed overflow-x-auto shadow-inner">
                     <ReactMarkdown
                       components={{
@@ -432,11 +432,11 @@ export default function App() {
 
           </div>
         ) : (
-          /* Recent History Log View */
+          /* Recent History Log View (SQLite Application Database) */
           <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-6 shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                📜 Recent Emergency Query Logs
+                📜 SQLite Emergency Query Logs (GET /logs)
               </h2>
               <button
                 onClick={fetchHistory}
@@ -447,17 +447,17 @@ export default function App() {
             </div>
 
             {history.length === 0 ? (
-              <p className="text-xs text-slate-500 py-8 text-center">No emergency queries recorded yet.</p>
+              <p className="text-xs text-slate-500 py-8 text-center">No emergency queries recorded in SQLite database yet.</p>
             ) : (
               <div className="space-y-3">
                 {history.map((log) => (
                   <div key={log.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-2 shadow-inner">
                     <div className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800/80 pb-2">
-                      <span className="font-bold text-slate-200">Log Entry #{log.id}</span>
+                      <span className="font-bold text-slate-200">SQLite Log Entry #{log.id}</span>
                       <span>{new Date(log.timestamp).toLocaleString()}</span>
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-red-400">Query:</p>
+                      <p className="text-xs font-bold text-red-400">User Query:</p>
                       <p className="text-xs text-slate-300">{log.query}</p>
                     </div>
                     <div>
@@ -475,7 +475,7 @@ export default function App() {
       {/* FOOTER */}
       <footer className="border-t border-slate-800/80 py-4 px-4 text-center text-xs text-slate-500 bg-slate-950/80">
         <p>
-          AI Emergency Response Assistant &bull; Grounded RAG Guidance (ChromaDB + Gemini 3.8 Flash) &bull; 🇮🇳 Emergency Helpline 112
+          AI Emergency Response Assistant &bull; Grounded RAG Guidance (ChromaDB + Gemini) &bull; SQLite Application DB (GET /logs) &bull; 🇮🇳 Emergency Helpline 112
         </p>
       </footer>
     </div>
