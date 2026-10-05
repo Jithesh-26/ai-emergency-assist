@@ -344,4 +344,4 @@ creozen-ai-emergency-assistant/
 
 ## 🛡️ License
 
-MIT License. Created for CREOZEN AI Competition.
+MIT License. Created for NEXT WAVE AI Competition.
