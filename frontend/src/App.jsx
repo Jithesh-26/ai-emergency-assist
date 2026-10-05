@@ -166,7 +166,7 @@ export default function App() {
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder="e.g., A grease fire started on the stove, what do I do? Or what should I put in an emergency go-bag?"
-                      className="w-full bg-white border border-slate-300 rounded-lg p-3 text-sm text-slate-900 font-medium placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition custom-scrollbar shadow-inner"
+                      className="emergency-textarea w-full rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition custom-scrollbar shadow-inner"
                     />
                   </div>
 
