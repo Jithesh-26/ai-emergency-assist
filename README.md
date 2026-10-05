@@ -312,8 +312,17 @@ creozen-ai-emergency-assistant/
 
 ## 🌐 Live Demo & Deployment Status
 
-- **Frontend Application**: `TODO — Pending Deployment`
-- **Backend REST API**: `TODO — Pending Deployment`
+| Service | Host / Platform | Status | URL |
+| :--- | :--- | :---: | :--- |
+| **Frontend UI / Live Website** | **Netlify** | 🟢 **LIVE** | [https://ai-emergency-assist.netlify.app/](https://ai-emergency-assist.netlify.app/) |
+| **Backend REST API** | **Render** | 🟢 **LIVE** | [https://ai-emergency-assist.onrender.com](https://ai-emergency-assist.onrender.com) |
+| **Interactive API Documentation** | **Render (FastAPI Docs)** | 🟢 **LIVE** | [https://ai-emergency-assist.onrender.com/docs](https://ai-emergency-assist.onrender.com/docs) |
+| **API Health Check** | **Render** | 🟢 **LIVE** | [https://ai-emergency-assist.onrender.com/health](https://ai-emergency-assist.onrender.com/health) |
+| **GitHub Repository** | **GitHub** | 🟢 **PUBLIC** | [https://github.com/Jithesh-26/ai-emergency-assist](https://github.com/Jithesh-26/ai-emergency-assist) |
+
+- **Frontend**: **LIVE on Netlify** (`https://ai-emergency-assist.netlify.app/`)
+- **Backend**: **LIVE on Render** (`https://ai-emergency-assist.onrender.com`)
+- **GitHub Repository**: [https://github.com/Jithesh-26/ai-emergency-assist](https://github.com/Jithesh-26/ai-emergency-assist)
 
 ---
 
