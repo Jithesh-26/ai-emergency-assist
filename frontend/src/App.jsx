@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-// Get backend API URL from environment variable
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 const PRESET_QUERIES = [
-  { id: 'fire', label: '🔥 Kitchen / House Fire', query: 'What should I do immediately if a fire breaks out in my house?' },
-  { id: 'earthquake', label: '🌋 Earthquake Indoor', query: 'What are the exact steps to stay safe during an indoor earthquake?' },
+  { id: 'fire', label: '🔥 Kitchen / House Fire', query: 'What should I do immediately if a grease fire breaks out in my kitchen?' },
+  { id: 'earthquake', label: '🌋 Indoor Earthquake', query: 'What are the exact steps to stay safe during an indoor earthquake?' },
   { id: 'flood', label: '🌊 Rising Flood Water', query: 'What should I do if floodwater starts rising near my building?' },
-  { id: 'cpr', label: '🫀 Unconscious / CPR', query: 'How do I perform CPR on an unconscious adult person who is not breathing?' },
-  { id: 'bleeding', label: '🩸 Severe Bleeding', query: 'How do I stop severe bleeding from a deep wound?' },
+  { id: 'gobag', label: '🎒 Emergency Go-Bag Essentials', query: 'What essential items should I pack in an emergency go-bag?' },
 ];
 
 export default function App() {
@@ -21,7 +19,6 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [activeTab, setActiveTab] = useState('assistant');
 
-  // Check Backend Health on Mount
   useEffect(() => {
     checkHealth();
     fetchHistory();
@@ -77,16 +74,12 @@ export default function App() {
 
       const data = await res.json();
       setResponse(data);
-      fetchHistory(); // Refresh recent log history
+      fetchHistory();
     } catch (err) {
       setError(err.message || 'An unexpected error occurred. Please check your backend connection.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handlePresetSelect = (presetQuery) => {
-    setQuery(presetQuery);
   };
 
   const copyToClipboard = (text) => {
@@ -113,14 +106,13 @@ export default function App() {
               <h1 className="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
                 AI Emergency Response Assistant
                 <span className="text-xs font-semibold bg-red-950 border border-red-700 text-red-400 px-2 py-0.5 rounded-full">
-                  RAG + Gemini
+                  RAG Pipeline Active
                 </span>
               </h1>
-              <p className="text-xs text-slate-400">Trusted emergency guidance grounded in verified manuals</p>
+              <p className="text-xs text-slate-400">Trusted guidance grounded in official emergency documents</p>
             </div>
           </div>
 
-          {/* Backend Status Indicator */}
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setActiveTab('assistant')}
@@ -152,18 +144,17 @@ export default function App() {
         </div>
       </header>
 
-      {/* Content Container */}
+      {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
         {activeTab === 'assistant' ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
-            {/* Left Column: Input Form & Presets */}
+            {/* Left Column: Form & Presets */}
             <div className="lg:col-span-5 space-y-6">
               
-              {/* Emergency Query Input Card */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
                 <h2 className="text-base font-bold text-slate-200 mb-2 flex items-center justify-between">
-                  <span>Describe the Situation</span>
+                  <span>Describe the Emergency</span>
                   <span className="text-xs text-slate-400 font-normal">Step 1 of 2</span>
                 </h2>
                 
@@ -173,14 +164,9 @@ export default function App() {
                       rows={5}
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      placeholder="e.g., A grease fire started on the stove, what do I do? Or someone is unconscious and not breathing..."
+                      placeholder="e.g., A grease fire started on the stove, what do I do? Or what should I put in an emergency go-bag?"
                       className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition custom-scrollbar"
                     />
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span>Press Shift+Enter for new line</span>
-                    <span>{query.length} chars</span>
                   </div>
 
                   <button
@@ -198,11 +184,11 @@ export default function App() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span>Retrieving & Generating...</span>
+                        <span>Retrieving RAG Context...</span>
                       </>
                     ) : (
                       <>
-                        <span>Generate Emergency Plan</span>
+                        <span>Get Emergency Guidance</span>
                         <span>➔</span>
                       </>
                     )}
@@ -210,17 +196,17 @@ export default function App() {
                 </form>
               </div>
 
-              {/* Quick Emergency Presets */}
+              {/* Quick Presets */}
               <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
                 <h3 className="text-sm font-bold text-slate-300 mb-3 flex items-center justify-between">
                   <span>Quick Presets</span>
-                  <span className="text-xs text-slate-500">Tap to populate</span>
+                  <span className="text-xs text-slate-500">Tap to select</span>
                 </h3>
                 <div className="flex flex-col space-y-2">
                   {PRESET_QUERIES.map((preset) => (
                     <button
                       key={preset.id}
-                      onClick={() => handlePresetSelect(preset.query)}
+                      onClick={() => setQuery(preset.query)}
                       className="text-left text-xs bg-slate-950/70 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 px-3 py-2.5 rounded-lg transition flex items-center justify-between group"
                     >
                       <span className="font-medium group-hover:text-white">{preset.label}</span>
@@ -232,21 +218,19 @@ export default function App() {
 
             </div>
 
-            {/* Right Column: AI Output & RAG Sources */}
+            {/* Right Column: Output */}
             <div className="lg:col-span-7 space-y-6">
               
-              {/* Error Alert */}
               {error && (
                 <div className="bg-red-950/60 border border-red-800 rounded-xl p-4 text-red-200 text-sm flex items-start space-x-3 shadow-lg">
                   <span className="text-lg">⚠️</span>
                   <div className="flex-grow">
-                    <p className="font-bold">Execution Error</p>
+                    <p className="font-bold">Error</p>
                     <p className="text-xs text-red-300 mt-1">{error}</p>
                   </div>
                 </div>
               )}
 
-              {/* Default Placeholder State */}
               {!response && !loading && !error && (
                 <div className="bg-slate-900 border border-slate-800 border-dashed rounded-xl p-10 text-center flex flex-col items-center justify-center min-h-[380px]">
                   <div className="w-16 h-16 rounded-full bg-slate-800/80 flex items-center justify-center text-3xl mb-4 text-slate-400">
@@ -254,12 +238,11 @@ export default function App() {
                   </div>
                   <h3 className="text-lg font-bold text-slate-200">Ready for Emergency Assessment</h3>
                   <p className="text-xs text-slate-400 max-w-md mt-2 leading-relaxed">
-                    Type an emergency situation on the left or select a preset. The system will retrieve relevant chunks from verified manuals using RAG and output prioritized steps.
+                    Ask an emergency query. The RAG pipeline will search ChromaDB vector embeddings of official documents in <code className="bg-slate-950 text-red-400 px-1 py-0.5 rounded">data/documents/</code> and prompt Gemini to generate grounded guidance.
                   </p>
                 </div>
               )}
 
-              {/* Loading Skeleton */}
               {loading && (
                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4 animate-pulse">
                   <div className="h-4 bg-slate-800 rounded w-1/3"></div>
@@ -272,15 +255,13 @@ export default function App() {
                 </div>
               )}
 
-              {/* AI Guidance Result Card */}
               {response && (
                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-6">
                   
-                  {/* Header Actions */}
                   <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                     <div className="flex items-center space-x-2">
                       <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-                      <h2 className="text-base font-bold text-emerald-400">AI Action Plan Generated</h2>
+                      <h2 className="text-base font-bold text-emerald-400">AI Emergency Guidance</h2>
                     </div>
                     <button
                       onClick={() => copyToClipboard(response.answer)}
@@ -290,46 +271,45 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Formatted Answer Output */}
+                  {/* Formatted Answer */}
                   <div className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap font-sans bg-slate-950/60 p-4 rounded-lg border border-slate-800/80">
                     {response.answer}
                   </div>
 
-                  {/* Sources Used Section */}
+                  {/* Sources List */}
                   <div className="border-t border-slate-800 pt-4">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <span>📚 Verified Document Sources ({response.sources.length})</span>
+                      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        📚 Verified Sources Used ({response.sources?.length || 0})
                       </h3>
-                      {response.snippets && response.snippets.length > 0 && (
+                      {response.sources && response.sources.length > 0 && (
                         <button
                           onClick={() => setShowSnippets(!showSnippets)}
                           className="text-xs text-red-400 hover:text-red-300 font-medium underline"
                         >
-                          {showSnippets ? 'Hide Context Snippets' : 'View RAG Context Snippets'}
+                          {showSnippets ? 'Hide Snippets' : 'View Retrieved Context Snippets'}
                         </button>
                       )}
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      {response.sources.map((src, idx) => (
+                      {response.sources && response.sources.map((src, idx) => (
                         <span
                           key={idx}
                           className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 border border-slate-700 text-slate-300"
                         >
-                          📄 {src}
+                          📄 {src.document || src}
                         </span>
                       ))}
                     </div>
 
-                    {/* Context Snippets Dropdown */}
-                    {showSnippets && response.snippets && (
+                    {showSnippets && response.sources && (
                       <div className="mt-4 space-y-3 pt-3 border-t border-slate-800/60">
-                        <h4 className="text-xs font-semibold text-slate-400">Retrieved Chunks from Vector Store:</h4>
-                        {response.snippets.map((item, idx) => (
+                        <h4 className="text-xs font-semibold text-slate-400">Retrieved Chunks & Relevance:</h4>
+                        {response.sources.map((src, idx) => (
                           <div key={idx} className="bg-slate-950 p-3 rounded border border-slate-850 text-xs text-slate-400 font-mono">
-                            <div className="text-red-400 font-bold mb-1">[Chunk {idx + 1}] Source: {item.source}</div>
-                            <div className="text-slate-300">{item.text}</div>
+                            <div className="text-red-400 font-bold mb-1">Source {idx + 1}: {src.document}</div>
+                            <div className="text-slate-300">{src.relevance}</div>
                           </div>
                         ))}
                       </div>
@@ -343,17 +323,17 @@ export default function App() {
 
           </div>
         ) : (
-          /* History Log Tab */
+          /* History View */
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
             <h2 className="text-lg font-bold text-slate-200 mb-4 flex items-center justify-between">
-              <span>Emergency Log History</span>
+              <span>Recent Emergency Query Logs</span>
               <button onClick={fetchHistory} className="text-xs text-red-400 hover:text-red-300 font-semibold">
                 🔄 Refresh Logs
               </button>
             </h2>
 
             {history.length === 0 ? (
-              <p className="text-xs text-slate-500 py-6 text-center">No logs recorded yet.</p>
+              <p className="text-xs text-slate-500 py-6 text-center">No emergency queries logged yet.</p>
             ) : (
               <div className="space-y-4">
                 {history.map((log) => (
@@ -368,7 +348,7 @@ export default function App() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-emerald-400">Sources:</p>
-                      <p className="text-xs text-slate-400">{log.sources.join(', ')}</p>
+                      <p className="text-xs text-slate-400">{Array.isArray(log.sources) ? log.sources.join(', ') : log.sources}</p>
                     </div>
                   </div>
                 ))}
@@ -378,9 +358,8 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-slate-800 py-4 px-4 text-center text-xs text-slate-500 bg-slate-900/40">
-        <p>AI Emergency Response Assistant &bull; Powered by LangChain, ChromaDB, FastAPI & Google Gemini API</p>
+        <p>AI Emergency Response Assistant &bull; RAG Pipeline (ChromaDB + Gemini Embedding text-embedding-004)</p>
       </footer>
     </div>
   );
