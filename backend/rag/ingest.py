@@ -1,5 +1,7 @@
 import os
 import sys
+import gc
+import shutil
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -16,29 +18,34 @@ DOCUMENTS_DIR = os.getenv("DOCUMENTS_DIR", str(BASE_DIR / "data" / "documents"))
 CHROMA_DB_DIR = os.getenv("CHROMA_DB_DIR", str(BASE_DIR / "chroma_db"))
 
 PLACEHOLDER_KEYS = {"your_gemini_api_key_here", "PASTE_YOUR_KEY_HERE", "your_actual_gemini_api_key", ""}
+COLLECTION_NAME = "emergency_guidance_v1"
+
+
+def is_valid_api_key(api_key: str = None) -> bool:
+    """Check if API Key is configured and not a placeholder."""
+    key = (api_key or os.getenv("GOOGLE_API_KEY", "")).strip()
+    return bool(key and key not in PLACEHOLDER_KEYS)
 
 
 def get_embedding_model(api_key: str = None):
     """
     Initialize embedding model.
-    Uses GoogleGenerativeAIEmbeddings if valid GOOGLE_API_KEY is available.
-    Falls back to FakeEmbeddings for testing if unconfigured or key is invalid.
+    Uses GoogleGenerativeAIEmbeddings (models/gemini-embedding-001) if GOOGLE_API_KEY is available and valid.
+    Falls back to FakeEmbeddings for offline testing if unconfigured or key is invalid.
     """
-    key = api_key or os.getenv("GOOGLE_API_KEY", "").strip()
+    key = (api_key or os.getenv("GOOGLE_API_KEY", "")).strip()
     
-    if key and key not in PLACEHOLDER_KEYS:
+    if is_valid_api_key(key):
         try:
             model = GoogleGenerativeAIEmbeddings(
-                model="models/text-embedding-004",
+                model="models/gemini-embedding-001",
                 google_api_key=key
             )
-            # Test embedding call to verify key validity
             model.embed_query("test authentication")
             return model
         except Exception as err:
-            print(f"[WARNING] Google Gemini API Authentication Error ({err}).")
-            print("[INFO] Please ensure your GOOGLE_API_KEY is an API key from Google AI Studio (starting with AIzaSy...).")
-            print("[INFO] Using fallback local embeddings so document ingestion can proceed.")
+            print(f"[WARNING] Google Gemini API Embedding Error: {err}")
+            print("[INFO] Falling back to local embeddings.")
     else:
         print("[INFO] GOOGLE_API_KEY is unconfigured or set to placeholder. Using fallback local embeddings for vector storage.")
         
@@ -106,7 +113,22 @@ def run_ingestion(doc_dir: str = DOCUMENTS_DIR, chroma_dir: str = CHROMA_DB_DIR)
     # 4. Generate Embeddings & Store in ChromaDB
     embeddings = get_embedding_model()
 
+    gc.collect()
+
+    vector_store = Chroma(
+        collection_name=COLLECTION_NAME,
+        embedding_function=embeddings,
+        persist_directory=chroma_dir
+    )
+    
+    # Reset collection if exists
+    try:
+        vector_store.delete_collection()
+    except Exception:
+        pass
+
     vector_store = Chroma.from_documents(
+        collection_name=COLLECTION_NAME,
         documents=chunks,
         embedding=embeddings,
         persist_directory=chroma_dir

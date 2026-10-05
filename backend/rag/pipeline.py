@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
-from .ingest import get_embedding_model, run_ingestion, PLACEHOLDER_KEYS
+from .ingest import get_embedding_model, run_ingestion, is_valid_api_key, COLLECTION_NAME
 
 load_dotenv()
 
@@ -52,13 +52,14 @@ class RAGPipeline:
                 run_ingestion(doc_dir=self.doc_dir, chroma_dir=self.chroma_dir)
 
             self.vector_store = Chroma(
+                collection_name=COLLECTION_NAME,
                 persist_directory=self.chroma_dir,
                 embedding_function=embeddings
             )
 
-            if api_key and api_key not in PLACEHOLDER_KEYS:
+            if is_valid_api_key(api_key):
                 self.llm = ChatGoogleGenerativeAI(
-                    model="gemini-1.5-flash",
+                    model="gemini-3.8-flash",
                     google_api_key=api_key,
                     temperature=0.2
                 )
@@ -119,16 +120,22 @@ class RAGPipeline:
 
             # 2. Call Gemini LLM if key is present
             api_key = os.getenv("GOOGLE_API_KEY", "").strip()
-            if self.llm and api_key and api_key not in PLACEHOLDER_KEYS:
+            if self.llm and is_valid_api_key(api_key):
                 prompt = SYSTEM_PROMPT_TEMPLATE.format(context=context, query=user_query)
                 llm_response = self.llm.invoke(prompt)
-                answer = llm_response.content if hasattr(llm_response, "content") else str(llm_response)
+                
+                if hasattr(llm_response, "content"):
+                    if isinstance(llm_response.content, list):
+                        answer_text = "".join([part.get("text", "") if isinstance(part, dict) else str(part) for part in llm_response.content])
+                    else:
+                        answer_text = str(llm_response.content)
+                else:
+                    answer_text = str(llm_response)
             else:
-                # Grounded response based on retrieved context if API key is missing
-                answer = f"[NOTICE: GOOGLE_API_KEY Unconfigured] Retrieved {len(context_chunks)} relevant emergency protocol chunk(s) from document(s): {', '.join(seen_sources)}.\n\nRetrieved Guidance Summary:\n" + context[:500] + "..."
+                answer_text = f"[NOTICE: GOOGLE_API_KEY Unconfigured] Retrieved {len(context_chunks)} relevant emergency protocol chunk(s) from document(s): {', '.join(seen_sources)}.\n\nRetrieved Guidance Summary:\n" + context[:500] + "..."
 
             return {
-                "answer": answer,
+                "answer": answer_text,
                 "sources": sources_list
             }
 
