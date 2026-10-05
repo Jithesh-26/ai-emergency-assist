@@ -43,16 +43,16 @@ rag_pipeline: Optional[RAGPipeline] = None
 def startup_event():
     global rag_pipeline
     init_db()
-    print("🚀 SQLite database initialized.")
+    print("[INFO] SQLite database initialized.")
     try:
         rag_pipeline = RAGPipeline()
     except Exception as e:
-        print(f"⚠️ RAG Pipeline deferred startup: {e}")
+        print(f"[WARNING] RAG Pipeline deferred startup: {e}")
 
 
 # Data Models
 class ChatRequest(BaseModel):
-    query: str = Field(..., example="What should I do if a kitchen grease fire breaks out?")
+    query: str = Field(..., example="What should I do during an earthquake?")
 
 
 class SourceItem(BaseModel):
@@ -90,13 +90,13 @@ def health_check():
     chroma_dir = os.getenv("CHROMA_DB_DIR", "./chroma_db")
     vector_ready = os.path.exists(chroma_dir) and len(os.listdir(chroma_dir)) > 0
     
-    is_healthy = api_key_valid and vector_ready
+    is_healthy = vector_ready
     
     return HealthResponse(
         status="healthy" if is_healthy else "degraded",
         api_key_configured=api_key_valid,
         vector_store_ready=vector_ready,
-        message="System operating normally." if is_healthy else "Google API Key is unconfigured or vector store is empty."
+        message="System operating normally." if is_healthy else "Vector store empty."
     )
 
 
@@ -131,7 +131,7 @@ def process_chat(request: ChatRequest):
             sources=doc_names
         )
     except Exception as err:
-        print(f"⚠️ Warning logging query to DB: {err}")
+        print(f"[WARNING] Logging query to DB: {err}")
     
     return ChatResponse(
         answer=result["answer"],

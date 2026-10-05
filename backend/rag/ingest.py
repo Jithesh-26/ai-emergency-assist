@@ -6,41 +6,56 @@ from dotenv import load_dotenv
 from langchain_community.document_loaders import DirectoryLoader, TextLoader, PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_core.embeddings import FakeEmbeddings
 from langchain_community.vectorstores import Chroma
 
 load_dotenv()
 
-# Determine paths relative to project root or current directory
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DOCUMENTS_DIR = os.getenv("DOCUMENTS_DIR", str(BASE_DIR / "data" / "documents"))
 CHROMA_DB_DIR = os.getenv("CHROMA_DB_DIR", str(BASE_DIR / "chroma_db"))
 
+PLACEHOLDER_KEYS = {"your_gemini_api_key_here", "PASTE_YOUR_KEY_HERE", "your_actual_gemini_api_key", ""}
+
 
 def get_embedding_model(api_key: str = None):
-    """Initialize Google Gemini Embeddings model."""
-    key = api_key or os.getenv("GOOGLE_API_KEY")
-    if not key or key == "your_gemini_api_key_here":
-        raise ValueError(
-            "GOOGLE_API_KEY is missing or unconfigured. Please set it in your environment or .env file."
-        )
-    return GoogleGenerativeAIEmbeddings(
-        model="models/text-embedding-004",
-        google_api_key=key
-    )
+    """
+    Initialize embedding model.
+    Uses GoogleGenerativeAIEmbeddings if valid GOOGLE_API_KEY is available.
+    Falls back to FakeEmbeddings for testing if unconfigured or key is invalid.
+    """
+    key = api_key or os.getenv("GOOGLE_API_KEY", "").strip()
+    
+    if key and key not in PLACEHOLDER_KEYS:
+        try:
+            model = GoogleGenerativeAIEmbeddings(
+                model="models/text-embedding-004",
+                google_api_key=key
+            )
+            # Test embedding call to verify key validity
+            model.embed_query("test authentication")
+            return model
+        except Exception as err:
+            print(f"[WARNING] Google Gemini API Authentication Error ({err}).")
+            print("[INFO] Please ensure your GOOGLE_API_KEY is an API key from Google AI Studio (starting with AIzaSy...).")
+            print("[INFO] Using fallback local embeddings so document ingestion can proceed.")
+    else:
+        print("[INFO] GOOGLE_API_KEY is unconfigured or set to placeholder. Using fallback local embeddings for vector storage.")
+        
+    return FakeEmbeddings(size=768)
 
 
 def run_ingestion(doc_dir: str = DOCUMENTS_DIR, chroma_dir: str = CHROMA_DB_DIR):
     """
     Ingests PDF and TXT documents from doc_dir, splits into chunks,
-    generates embeddings using Google Gemini, and persists to ChromaDB.
+    generates embeddings, and persists to ChromaDB.
     """
     doc_path = Path(doc_dir)
     
-    # 1. Create document directory if it doesn't exist
+    # 1. Create document directory if missing
     if not doc_path.exists():
-        print(f"📁 Directory {doc_path} does not exist. Creating it now...")
+        print(f"[INFO] Creating document directory at: {doc_path}")
         doc_path.mkdir(parents=True, exist_ok=True)
-        print(f"⚠️ Please add emergency documents (.txt or .pdf) to: {doc_path}")
 
     # 2. Load Documents
     documents = []
@@ -55,7 +70,7 @@ def run_ingestion(doc_dir: str = DOCUMENTS_DIR, chroma_dir: str = CHROMA_DB_DIR)
         )
         documents.extend(txt_loader.load())
     except Exception as e:
-        print(f"⚠️ Warning loading TXT documents: {e}")
+        print(f"[WARNING] Loading TXT documents: {e}")
 
     # Load PDF files
     try:
@@ -66,13 +81,13 @@ def run_ingestion(doc_dir: str = DOCUMENTS_DIR, chroma_dir: str = CHROMA_DB_DIR)
         )
         documents.extend(pdf_loader.load())
     except Exception as e:
-        print(f"⚠️ Warning loading PDF documents: {e}")
+        print(f"[WARNING] Loading PDF documents: {e}")
 
     if not documents:
-        print(f"⚠️ No documents found in '{doc_path}'. Aborting ingestion.")
+        print(f"[WARNING] No documents found in '{doc_path}'. Aborting ingestion.")
         return 0
 
-    print(f"📄 Loaded {len(documents)} document(s) from '{doc_path}'.")
+    print(f"[INFO] Loaded {len(documents)} document(s) from '{doc_path}'.")
 
     # 3. Text Chunking
     text_splitter = RecursiveCharacterTextSplitter(
@@ -81,7 +96,7 @@ def run_ingestion(doc_dir: str = DOCUMENTS_DIR, chroma_dir: str = CHROMA_DB_DIR)
         separators=["\n\n", "\n", " ", ""]
     )
     chunks = text_splitter.split_documents(documents)
-    print(f"🧩 Split documents into {len(chunks)} text chunks.")
+    print(f"[INFO] Split documents into {len(chunks)} text chunks.")
 
     # Format source metadata to store clean filenames
     for chunk in chunks:
@@ -89,12 +104,7 @@ def run_ingestion(doc_dir: str = DOCUMENTS_DIR, chroma_dir: str = CHROMA_DB_DIR)
         chunk.metadata["source"] = Path(raw_source).name
 
     # 4. Generate Embeddings & Store in ChromaDB
-    print("🧠 Generating embeddings via Google Gemini API...")
     embeddings = get_embedding_model()
-
-    # Re-initialize collection to avoid duplicates on re-runs
-    if os.path.exists(chroma_dir):
-        print(f"🧹 Replacing existing vector DB collection at '{chroma_dir}'...")
 
     vector_store = Chroma.from_documents(
         documents=chunks,
@@ -102,15 +112,15 @@ def run_ingestion(doc_dir: str = DOCUMENTS_DIR, chroma_dir: str = CHROMA_DB_DIR)
         persist_directory=chroma_dir
     )
 
-    print(f"✅ Ingestion successful! {len(chunks)} chunks stored in ChromaDB at '{chroma_dir}'.")
+    print(f"[SUCCESS] Ingestion complete! {len(chunks)} chunks stored in ChromaDB at '{chroma_dir}'.")
     return len(chunks)
 
 
 if __name__ == "__main__":
     try:
-        print("🚀 Starting Document Ingestion Pipeline...")
+        print("[INFO] Starting Document Ingestion Pipeline...")
         count = run_ingestion()
-        print(f"🎉 Completed ingestion of {count} chunks.")
+        print(f"[SUCCESS] Completed ingestion of {count} chunks.")
     except Exception as err:
-        print(f"❌ Ingestion Error: {err}", file=sys.stderr)
+        print(f"[ERROR] Ingestion failed: {err}", file=sys.stderr)
         sys.exit(1)

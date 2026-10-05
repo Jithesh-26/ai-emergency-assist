@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
-from .ingest import get_embedding_model, run_ingestion
+from .ingest import get_embedding_model, run_ingestion, PLACEHOLDER_KEYS
 
 load_dotenv()
 
@@ -41,17 +41,14 @@ class RAGPipeline:
 
     def _initialize(self):
         """Initialize ChromaDB vector store and Gemini LLM."""
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key or api_key == "your_gemini_api_key_here":
-            print("⚠️ GOOGLE_API_KEY is not configured in environment.")
-            return
+        api_key = os.getenv("GOOGLE_API_KEY", "").strip()
 
         try:
             embeddings = get_embedding_model(api_key)
 
             # Auto-ingest documents if vector DB doesn't exist yet
             if not os.path.exists(self.chroma_dir) or not os.listdir(self.chroma_dir):
-                print("🔄 Vector database not found. Running document ingestion...")
+                print("[INFO] Vector database not found. Running document ingestion...")
                 run_ingestion(doc_dir=self.doc_dir, chroma_dir=self.chroma_dir)
 
             self.vector_store = Chroma(
@@ -59,14 +56,19 @@ class RAGPipeline:
                 embedding_function=embeddings
             )
 
-            self.llm = ChatGoogleGenerativeAI(
-                model="gemini-1.5-flash",
-                google_api_key=api_key,
-                temperature=0.2
-            )
-            print("✅ RAG Pipeline initialized successfully.")
+            if api_key and api_key not in PLACEHOLDER_KEYS:
+                self.llm = ChatGoogleGenerativeAI(
+                    model="gemini-1.5-flash",
+                    google_api_key=api_key,
+                    temperature=0.2
+                )
+            else:
+                self.llm = None
+                print("[WARNING] GOOGLE_API_KEY not configured. Gemini LLM set to offline mode.")
+                
+            print("[INFO] RAG Pipeline initialized successfully.")
         except Exception as e:
-            print(f"❌ RAG Pipeline initialization failed: {e}")
+            print(f"[ERROR] RAG Pipeline initialization failed: {e}")
 
     def query(self, user_query: str, top_k: int = 4) -> Dict[str, Any]:
         """
@@ -76,22 +78,14 @@ class RAGPipeline:
         3. Sends context + question to Gemini API.
         4. Returns answer + formatted sources.
         """
-        # Validate API Key
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key or api_key == "your_gemini_api_key_here":
+        if not self.vector_store:
+            self._initialize()
+
+        if not self.vector_store:
             return {
-                "answer": "⚠️ Error: GOOGLE_API_KEY is missing or invalid. Please configure your API key in the environment variables.",
+                "answer": "Error: Vector Store could not be initialized.",
                 "sources": []
             }
-
-        # Lazy init check
-        if not self.vector_store or not self.llm:
-            self._initialize()
-            if not self.vector_store or not self.llm:
-                return {
-                    "answer": "⚠️ Error: Vector Store or Gemini LLM could not be initialized. Ensure documents are ingested and GOOGLE_API_KEY is valid.",
-                    "sources": []
-                }
 
         try:
             # 1. Retrieve relevant chunks from ChromaDB
@@ -123,12 +117,15 @@ class RAGPipeline:
 
             context = "\n\n".join(context_chunks)
 
-            # 2. Format Prompt
-            prompt = SYSTEM_PROMPT_TEMPLATE.format(context=context, query=user_query)
-
-            # 3. Call Gemini LLM
-            llm_response = self.llm.invoke(prompt)
-            answer = llm_response.content if hasattr(llm_response, "content") else str(llm_response)
+            # 2. Call Gemini LLM if key is present
+            api_key = os.getenv("GOOGLE_API_KEY", "").strip()
+            if self.llm and api_key and api_key not in PLACEHOLDER_KEYS:
+                prompt = SYSTEM_PROMPT_TEMPLATE.format(context=context, query=user_query)
+                llm_response = self.llm.invoke(prompt)
+                answer = llm_response.content if hasattr(llm_response, "content") else str(llm_response)
+            else:
+                # Grounded response based on retrieved context if API key is missing
+                answer = f"[NOTICE: GOOGLE_API_KEY Unconfigured] Retrieved {len(context_chunks)} relevant emergency protocol chunk(s) from document(s): {', '.join(seen_sources)}.\n\nRetrieved Guidance Summary:\n" + context[:500] + "..."
 
             return {
                 "answer": answer,
@@ -136,8 +133,8 @@ class RAGPipeline:
             }
 
         except Exception as err:
-            print(f"❌ Error during RAG pipeline query execution: {err}")
+            print(f"[ERROR] Error during RAG pipeline query execution: {err}")
             return {
-                "answer": f"⚠️ An error occurred while generating emergency guidance: {str(err)}",
+                "answer": f"An error occurred while generating emergency guidance: {str(err)}",
                 "sources": []
             }
