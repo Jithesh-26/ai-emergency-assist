@@ -11,9 +11,19 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.embeddings import FakeEmbeddings
 from langchain_community.vectorstores import Chroma
 
-load_dotenv()
-
+# Explicitly load backend/.env based on file location
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+BACKEND_ENV = BACKEND_DIR / ".env"
+ROOT_ENV = BASE_DIR / ".env"
+
+if BACKEND_ENV.exists():
+    load_dotenv(dotenv_path=BACKEND_ENV, override=True)
+elif ROOT_ENV.exists():
+    load_dotenv(dotenv_path=ROOT_ENV, override=True)
+else:
+    load_dotenv(override=True)
+
 DOCUMENTS_DIR = os.getenv("DOCUMENTS_DIR", str(BASE_DIR / "data" / "documents"))
 CHROMA_DB_DIR = os.getenv("CHROMA_DB_DIR", str(BASE_DIR / "chroma_db"))
 

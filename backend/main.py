@@ -8,13 +8,23 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 # Ensure backend directory is in sys.path
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+BASE_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(BASE_DIR))
+
+# Explicitly load backend/.env based on file location
+BACKEND_ENV = BASE_DIR / ".env"
+ROOT_ENV = BASE_DIR.parent / ".env"
+
+if BACKEND_ENV.exists():
+    load_dotenv(dotenv_path=BACKEND_ENV, override=True)
+elif ROOT_ENV.exists():
+    load_dotenv(dotenv_path=ROOT_ENV, override=True)
+else:
+    load_dotenv(override=True)
 
 from database import init_db, log_query, get_recent_logs
 from rag.pipeline import RAGPipeline
-from rag.ingest import run_ingestion
-
-load_dotenv()
+from rag.ingest import run_ingestion, is_valid_api_key
 
 # Initialize FastAPI App
 app = FastAPI(
@@ -84,19 +94,19 @@ def read_root():
 
 @app.get("/health", response_model=HealthResponse, summary="Health Check")
 def health_check():
-    api_key = os.getenv("GOOGLE_API_KEY")
-    api_key_valid = bool(api_key and api_key != "your_gemini_api_key_here")
+    api_key = os.getenv("GOOGLE_API_KEY", "").strip()
+    api_key_valid = is_valid_api_key(api_key)
     
     chroma_dir = os.getenv("CHROMA_DB_DIR", "./chroma_db")
     vector_ready = os.path.exists(chroma_dir) and len(os.listdir(chroma_dir)) > 0
     
-    is_healthy = vector_ready
+    is_healthy = api_key_valid and vector_ready
     
     return HealthResponse(
         status="healthy" if is_healthy else "degraded",
         api_key_configured=api_key_valid,
         vector_store_ready=vector_ready,
-        message="System operating normally." if is_healthy else "Vector store empty."
+        message="System operating normally." if is_healthy else ("Google API Key is unconfigured or vector store is empty.")
     )
 
 

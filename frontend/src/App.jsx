@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -165,7 +166,7 @@ export default function App() {
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder="e.g., A grease fire started on the stove, what do I do? Or what should I put in an emergency go-bag?"
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition custom-scrollbar"
+                      className="w-full bg-white border border-slate-300 rounded-lg p-3 text-sm text-slate-900 font-medium placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition custom-scrollbar shadow-inner"
                     />
                   </div>
 
@@ -271,9 +272,23 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Formatted Answer */}
-                  <div className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap font-sans bg-slate-950/60 p-4 rounded-lg border border-slate-800/80">
-                    {response.answer}
+                  {/* Formatted Markdown Answer Output */}
+                  <div className="text-sm text-slate-200 font-sans bg-slate-950/60 p-4 rounded-lg border border-slate-800/80 leading-relaxed overflow-x-auto">
+                    <ReactMarkdown
+                      components={{
+                        h1: ({node, ...props}) => <h1 className="text-lg font-extrabold text-white mt-4 mb-2 border-b border-slate-800 pb-1" {...props} />,
+                        h2: ({node, ...props}) => <h2 className="text-base font-bold text-red-400 mt-4 mb-2" {...props} />,
+                        h3: ({node, ...props}) => <h3 className="text-sm font-bold text-slate-100 mt-3 mb-1" {...props} />,
+                        p: ({node, ...props}) => <p className="mb-3 text-slate-200 leading-relaxed" {...props} />,
+                        ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-1 mb-3 text-slate-200 pl-2" {...props} />,
+                        ol: ({node, ...props}) => <ol className="list-decimal list-inside space-y-1.5 mb-3 text-slate-200 pl-2 font-medium" {...props} />,
+                        li: ({node, ...props}) => <li className="text-slate-200 my-0.5" {...props} />,
+                        strong: ({node, ...props}) => <strong className="font-extrabold text-white bg-slate-800/60 px-1 py-0.5 rounded" {...props} />,
+                        code: ({node, ...props}) => <code className="bg-slate-900 text-red-400 px-1 py-0.5 rounded text-xs font-mono border border-slate-800" {...props} />
+                      }}
+                    >
+                      {response.answer}
+                    </ReactMarkdown>
                   </div>
 
                   {/* Sources List */}
@@ -359,7 +374,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-slate-800 py-4 px-4 text-center text-xs text-slate-500 bg-slate-900/40">
-        <p>AI Emergency Response Assistant &bull; RAG Pipeline (ChromaDB + Gemini Embedding text-embedding-004)</p>
+        <p>AI Emergency Response Assistant &bull; RAG Pipeline (ChromaDB + Gemini Embedding)</p>
       </footer>
     </div>
   );

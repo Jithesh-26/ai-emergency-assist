@@ -5,11 +5,21 @@ from dotenv import load_dotenv
 
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
-from .ingest import get_embedding_model, run_ingestion, is_valid_api_key, COLLECTION_NAME
+from .ingest import get_embedding_model, run_ingestion, is_valid_api_key, COLLECTION_NAME, PLACEHOLDER_KEYS
 
-load_dotenv()
-
+# Explicitly load backend/.env based on file location
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+BACKEND_ENV = BACKEND_DIR / ".env"
+ROOT_ENV = BASE_DIR / ".env"
+
+if BACKEND_ENV.exists():
+    load_dotenv(dotenv_path=BACKEND_ENV, override=True)
+elif ROOT_ENV.exists():
+    load_dotenv(dotenv_path=ROOT_ENV, override=True)
+else:
+    load_dotenv(override=True)
+
 CHROMA_DB_DIR = os.getenv("CHROMA_DB_DIR", str(BASE_DIR / "chroma_db"))
 DOCUMENTS_DIR = os.getenv("DOCUMENTS_DIR", str(BASE_DIR / "data" / "documents"))
 
@@ -63,6 +73,7 @@ class RAGPipeline:
                     google_api_key=api_key,
                     temperature=0.2
                 )
+                print("[INFO] Gemini LLM (gemini-3.8-flash) initialized successfully.")
             else:
                 self.llm = None
                 print("[WARNING] GOOGLE_API_KEY not configured. Gemini LLM set to offline mode.")
