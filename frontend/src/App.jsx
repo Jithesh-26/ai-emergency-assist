@@ -186,26 +186,28 @@ export default function App() {
 
               <a
                 href="tel:112"
-                className="bg-white hover:bg-slate-100 text-red-700 font-black text-xs px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg transition transform active:scale-95 flex items-center space-x-1 whitespace-nowrap"
+                className="bg-white hover:bg-slate-100 text-red-700 font-black text-xs px-4 py-2.5 rounded-lg shadow-md hover:shadow-lg transition transform active:scale-95 flex items-center space-x-1 whitespace-nowrap ml-2"
               >
                 <span>📞 CALL NOW</span>
               </a>
             </div>
 
-            {/* Quick Contacts Grid: 100, 101, 102, 1930, 1098, 181 */}
+            {/* Quick Contacts Grid: 100, 101, 102, 1930, 1098, 181 (Responsive wrapping, no text truncation) */}
             <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
               {EMERGENCY_CONTACTS.map((contact) => (
                 <a
                   key={contact.id}
                   href={contact.tel}
-                  className="bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 rounded-xl p-2.5 transition flex flex-col justify-between group shadow-sm"
+                  className="bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 rounded-xl p-2.5 transition flex flex-col justify-between group shadow-sm min-h-[72px]"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-base">{contact.icon}</span>
                     <span className="text-xs font-black text-red-400 group-hover:text-red-300">{contact.number}</span>
                   </div>
                   <div className="mt-1">
-                    <div className="text-[11px] font-bold text-slate-200 group-hover:text-white truncate">{contact.name}</div>
+                    <div className="text-[11px] font-bold text-slate-200 leading-snug group-hover:text-white whitespace-normal break-words">
+                      {contact.name}
+                    </div>
                     <div className="text-[10px] text-slate-500 group-hover:text-slate-400">Tap to call</div>
                   </div>
                 </a>
@@ -246,13 +248,14 @@ export default function App() {
                     />
                   </div>
 
+                  {/* Filled Emergency-Red Button */}
                   <button
                     type="submit"
                     disabled={loading || !query.trim()}
-                    className={`w-full py-3.5 px-4 rounded-xl font-extrabold text-sm shadow-lg flex items-center justify-center space-x-2 transition ${
+                    className={`w-full py-3.5 px-4 rounded-xl font-black text-sm shadow-lg flex items-center justify-center space-x-2 transition ${
                       loading || !query.trim()
                         ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white shadow-red-950/60 active:scale-[0.99] border border-red-500/50'
+                        : 'bg-red-600 hover:bg-red-500 text-white shadow-red-950/60 active:scale-[0.99]'
                     }`}
                   >
                     {loading ? (
@@ -363,7 +366,7 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Formatted Markdown Output */}
+                  {/* Formatted Clean Markdown Output (No visual boxes around bold text) */}
                   <div className="text-sm text-slate-100 font-sans bg-slate-950/80 p-5 rounded-xl border border-slate-800/80 leading-relaxed overflow-x-auto shadow-inner">
                     <ReactMarkdown
                       components={{
@@ -374,7 +377,7 @@ export default function App() {
                         ul: ({node, ...props}) => <ul className="list-disc list-inside space-y-1 mb-3 text-slate-200 pl-2" {...props} />,
                         ol: ({node, ...props}) => <ol className="list-decimal list-inside space-y-2 mb-4 text-slate-100 pl-2 font-semibold" {...props} />,
                         li: ({node, ...props}) => <li className="text-slate-200 my-1 leading-relaxed" {...props} />,
-                        strong: ({node, ...props}) => <strong className="font-black text-white bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/60" {...props} />,
+                        strong: ({node, ...props}) => <strong className="font-extrabold text-white" {...props} />,
                         code: ({node, ...props}) => <code className="bg-slate-900 text-red-400 px-1 py-0.5 rounded text-xs font-mono border border-slate-800" {...props} />
                       }}
                     >
